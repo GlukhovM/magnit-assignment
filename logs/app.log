@@ -1,0 +1,11 @@
+00:48:41.327 [main] INFO  Application - Application start
+00:48:41.329 [main] INFO  Application - Loading application properties
+00:48:41.330 [main] INFO  Application - Application properties successfully loaded
+00:48:41.332 [main] INFO  Dao - Start filling the database
+00:49:06.659 [main] INFO  Dao - Database is filled
+00:49:07.527 [main] INFO  XMLService - XML is filled
+00:49:09.242 [main] INFO  XMLService - XML is transformed
+00:49:26.266 [main] INFO  XMLService - Node attributes extracted
+00:49:26.266 [main] INFO  Service - Calculating the sum of the values of all attributes
+00:49:26.317 [main] INFO  Service - The sum of the values of all attributes = 500000500000
+00:49:26.319 [main] INFO  Application - Application successfully finished, running time = 44 seconds

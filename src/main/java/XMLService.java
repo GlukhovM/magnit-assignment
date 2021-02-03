@@ -1,3 +1,5 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -21,40 +23,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class XMLService {
+    private static final Logger logger = LoggerFactory.getLogger(XMLService.class);
 
-    public void createXML(File file, List<Integer> values) {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+    public void fillXML(File file, List<Integer> values) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             String firstString = "<entries>\n";
             String lastString = "</entries>";
             writer.write(firstString);
             for (Integer value : values) {
                 writer.write("\t<entry>\n");
                 writer.write("\t\t<field>");
-                writer.write(value);
+                writer.write(value.toString());
                 writer.write("</field>\n");
                 writer.write("\t</entry>\n");
             }
             writer.write(lastString);
-            writer.flush();
+            logger.info("XML is filled");
         } catch (IOException e) {
-            e.printStackTrace();
-            //TODO use logger LOGBACK
+            logger.error("Can`t fill XML file", e);
+            throw new IllegalStateException("Can`t fill XML file", e);
         }
     }
 
     public void transformXML(File source, File target, File xslt) {
         Source xmlSource = new StreamSource(source);
-        Result xmltarget = new StreamResult(target);
+        Result xmlTarget = new StreamResult(target);
         Source xsltPattern = new StreamSource(xslt);
 
         try {
             Transformer transformer = TransformerFactory.newInstance().newTransformer(xsltPattern);
-            transformer.transform(xmlSource, xmltarget);
-
+            transformer.transform(xmlSource, xmlTarget);
+            logger.info("XML is transformed");
         } catch (TransformerException e) {
-            e.printStackTrace();
-            //TODO use logger LOGBACK
+            logger.error("XML transformation failed", e);
+            throw new IllegalStateException("XML transformation failed", e);
         }
     }
 
@@ -72,9 +74,10 @@ public class XMLService {
                 int tempValue = Integer.parseInt(entry.getAttributes().getNamedItem(attributeName).getNodeValue());
                 result.add(tempValue);
             }
+            logger.info("Node attributes extracted");
         } catch (ParserConfigurationException | IOException | XPathExpressionException | SAXException e) {
-            e.printStackTrace();
-            //TODO use logger LOGBACK
+            logger.error("Extraction of node attribute failed", e);
+            throw new IllegalStateException("Extraction of node attribute failed", e);
         }
         return result;
     }

@@ -1,16 +1,22 @@
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Properties;
 
 public class Service {
+    private static final Logger logger = LoggerFactory.getLogger(Service.class);
 
-    public DAO dao;
-    public XMLService xmlService;
+    private Dao dao;
+    private XMLService xmlService;
+    private String directory;
+    private int entriesCount;
+    private String tableName;
+    private String columnName;
 
-    public void setDao(DAO dao) {
+    public void setDao(Dao dao) {
         this.dao = dao;
     }
 
@@ -18,64 +24,51 @@ public class Service {
         this.xmlService = xmlService;
     }
 
+    public void setDirectory(String directory) {
+        this.directory = directory;
+    }
+
+    public void setEntriesCount(int entriesCount) {
+        this.entriesCount = entriesCount;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
+
     public void printSum(List<Integer> values) {
-        System.out.println(values.stream().mapToInt(i -> i).sum());
+        logger.info("Calculating the sum of the values of all attributes");
+        logger.info("The sum of the values of all attributes = {}", values.stream().mapToLong(i -> i).sum());
     }
 
-    public void configureDAO() {
-        Properties prop = new Properties();
-        try (InputStream inputStream = Service.class.getResourceAsStream("application.properties")) {
-            prop.load(inputStream);
+    public void doAllTasks() {
+        dao.fillDB(tableName, columnName, entriesCount);
+
+        File source = new File(directory + "1.xml");
+        try {
+            source.createNewFile();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Failed to create source file", e);
+            throw new IllegalStateException("Failed to create source file", e);
         }
-        String dbName = prop.getProperty("dbName");
-        dao.setDbName(dbName);
-        dao.setHost(prop.getProperty("host"));
-        dao.setPort(Integer.parseInt(prop.getProperty("port")));
-        dao.setUser(prop.getProperty("user"));
-        dao.setPass(prop.getProperty("pass"));
-    }
+        xmlService.fillXML(source, dao.getAll(tableName));
 
-    public void doAllTasks() throws IOException {
-
-        //FILL DB
-        //TODO add BatchSize to params?
-        dao.fillDB("test", "field", 1_000);
-
-
-        //CREATE XML
-        Properties prop = new Properties();
-        try (InputStream inputStream = Service.class.getResourceAsStream("application.properties")) {
-            prop.load(inputStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        File source = new File(prop.getProperty("directory") + "1.xml");
-        source.createNewFile();
-        xmlService.createXML(source, dao.getAll("test"));
-
-
-        //TRANSFORM XML
-        File target = new File(prop.getProperty("directory") + "2.xml");
-        File xslt = null;
+        File target = new File(directory + "2.xml");
+        File xslt;
         try {
             xslt = new File(this.getClass().getResource("xslt.xsl").toURI());
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            logger.error("Failed to create xslt file", e);
+            throw new IllegalStateException("Failed to create xslt file", e);
         }
         xmlService.transformXML(source, target, xslt);
 
+        List<Integer> values = xmlService.extractNodeAttributes(target, "/entries/entry", columnName);
 
-        //PRINT SUM
-        List<Integer> values = xmlService.extractNodeAttributes(target, "/entries/entry", "field");
         printSum(values);
     }
-
 }
-
-// Source xsltPattern = new StreamSource(new File("C://Users//Mikhail//IdeaProjects//magnit-assignment//src//main//resources//xslt.xsl"));
-
-
-
-
